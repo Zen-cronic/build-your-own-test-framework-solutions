@@ -1,0 +1,17 @@
+{
+  "name": "desc-plot",
+  "version": "1.0.0",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "shebang": "node ./src/shebang.js"
+  },
+  "type": "module",
+  "bin": "./src/cli.mjs",
+  "exports": {
+    ".": "./src/runner.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}
