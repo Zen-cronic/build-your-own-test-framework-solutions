@@ -83,3 +83,10 @@ describe("ToDoRepository", () => {
     });
   });
 });
+
+describe("async fn", async () => {
+
+  it('should throw Error if cb of describe is an async', () => {
+    
+  });
+})

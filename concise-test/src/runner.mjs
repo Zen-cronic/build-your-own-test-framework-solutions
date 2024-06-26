@@ -61,7 +61,7 @@ export const run = async () => {
     console.error(error);
   }
 
-  printAllFailures();
+  // printAllFailures();
   console.log();
   console.log(
     color(`<green>${successes}</green> tests have passed, <red>${failures.length}</red> tests have failed
@@ -81,7 +81,6 @@ export const it = (name, body) => {
     successes++;
   } catch (e) {
     console.log(indent(color(`<bold><red>${CROSS} PASS ${name}</red></bold>`)));
-    // anyFailure = true
     // failures.push(e);
     failures.push({
       error: e,
@@ -96,11 +95,19 @@ export const it = (name, body) => {
 };
 
 export const describe = (name, body) => {
+  
   console.log(indent(name));
   // console.log(name);
   // currentDescribe = name
   describeStack = [...describeStack, name];
-  body(); //the it invoked
+  const result = body(); //the it invoked
+  
+  if(result instanceof Promise){
+    console.error(`Cannot be async`);
+    // process.exit(1)
+    throw new Error(`Cannot be async`)
+    
+  }
   // currentDescribe = undefined
   describeStack = withoutLast(describeStack);
 };
