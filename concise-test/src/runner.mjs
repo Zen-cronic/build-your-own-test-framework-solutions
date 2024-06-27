@@ -6,6 +6,24 @@ import { color } from "./colors.mjs";
 
 // let anyFailure = false;  //module-level vari
 
+/**
+ * @typedef {Array<DescribeBlock>} DescribeStack
+ */
+
+/**
+ * @typedef DescribeBlock
+ * @property {string} name
+ * @property {Array<Function>} befores
+ * @property {Array<Function>} [afters]
+ */
+
+/**
+ * @typedef Failure
+ * @property {Error} error
+ * @property {string} name
+ * @property {DescribeStack} describeStack
+ */
+
 const TICK = "\u2713";
 const CROSS = "\u2717";
 
@@ -17,16 +35,43 @@ const exitCodes = {
 let successes = 0;
 
 // let currentDescribe ;
+
+// from <string> to {name<string>, befores<Array>, afters<Array>}
+
+/**
+ * @type {DescribeStack}
+ */
 let describeStack = [];
 
 // let failures = 0;
+/**
+ * @type {Array<Failure>}
+ */
 const failures = [];
 
+/**
+ *
+ * @param {string} name
+ * @returns {DescribeBlock}
+ */
+const makeDescribe = (name) => {
+  return {
+    name: name,
+    befores: [],
+    afters: [],
+  };
+};
+
+/**
+ *
+ * @param {Failure} failure
+ */
 const printFailure = (failure) => {
   console.error(color(composeTestDescription(failure)));
   console.error(failure.error);
   console.error("");
 };
+
 const printAllFailures = () => {
   if (failures.length > 0) {
     console.error("");
@@ -37,18 +82,40 @@ const printAllFailures = () => {
   }
 };
 
-const composeTestDescription = ({ name, describeStack }) => {
-  return [...describeStack, name]
-    .map((describeName) => `<bold><red>${describeName}</red></bold>`)
+/**
+ *
+ * @param {Failure} failure
+ * @returns {string}
+ */
+const composeTestDescription = (failure) => {
+  //only need the name of the describe block obj, not befores or afters
+  //describeStack is the global array of non-it describe blocks; name is current (failing) it test
+
+  const { name, describeStack } = failure;
+  return [...describeStack, { name }]
+    .map(({ name }) => `<bold><red>${name}</red></bold>`)
     .join(" -> ");
 };
 
+/**
+ * 
+ * @param {string} message 
+ * @returns {string}
+ */
 const indent = (message) => {
   return `${" ".repeat(describeStack.length * 2)}${message}`;
 };
 
+/**
+ * 
+ * @param {Array} arr 
+ * @returns {Array}
+ */
 const withoutLast = (arr) => arr.slice(0, -1);
 
+/**
+ * @returns {Promise<void>}
+ */
 export const run = async () => {
   try {
     const p = path.resolve(process.cwd(), "test/tests.mjs");
@@ -61,7 +128,7 @@ export const run = async () => {
     console.error(error);
   }
 
-  // printAllFailures();
+  printAllFailures();
   console.log();
   console.log(
     color(`<green>${successes}</green> tests have passed, <red>${failures.length}</red> tests have failed
@@ -72,6 +139,11 @@ export const run = async () => {
   process.exit(failures.length != 0 ? exitCodes.failures : exitCodes.ok);
 };
 
+/**
+ * 
+ * @param {string} name 
+ * @param {Function} body 
+ */
 export const it = (name, body) => {
   try {
     body();
@@ -94,19 +166,22 @@ export const it = (name, body) => {
   // process.exit(anyFailure ? exitCodes.failures: exitCodes.ok)
 };
 
+/**
+ * 
+ * @param {string} name 
+ * @param {Function} body 
+ */
 export const describe = (name, body) => {
-  
   console.log(indent(name));
   // console.log(name);
   // currentDescribe = name
-  describeStack = [...describeStack, name];
+  describeStack = [...describeStack, makeDescribe(name)];
   const result = body(); //the it invoked
-  
-  if(result instanceof Promise){
+
+  if (result instanceof Promise) {
     console.error(`Cannot be async`);
     // process.exit(1)
-    throw new Error(`Cannot be async`)
-    
+    throw new Error(`Cannot be async`);
   }
   // currentDescribe = undefined
   describeStack = withoutLast(describeStack);
