@@ -78,14 +78,16 @@ describe("ToDoRepository", () => {
 
     it("filters out todos that do not match filter", () => {
       //1+n expect DNThrow
-      // expect(1).toBe(1)
+      // expect(1).toBe(1) //true
 
       // expect(1).toBe("1"); //ExpectationError: Expected value to be "1", but it was 1
-      expect("2").toBe(2)  //ExpectationError: Expected value to be 2, but it was "2"
+      // expect("2").toBe(2)  //ExpectationError: Expected value to be 2, but it was "2"
 
+      // expect(1).toBe(100) //to be 100, but it was 1
       expect(
         repository.findAllMatching("some other test")
       ).toHaveLength(100);
+
       // if (
       //   repository.findAllMatching("some other test")
       //     .length !== 0

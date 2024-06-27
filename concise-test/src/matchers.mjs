@@ -61,15 +61,37 @@ export const toHaveLength = (actual, expected) => {
 
 /**
  *
+ * @param {string} str
+ * @returns {string}
+ */
+const padDoubleQuotes = (str) => {
+  return `"${str}"`;
+};
+
+/**
+ *
+ * @param {string} str
+ * @returns {boolean}
+ */
+const isString = (str) => {
+  const className = Object.prototype.toString.call(str);
+
+  return className === "[object String]";
+};
+
+/**
+ *
  * @param {*} actual
  * @param {*} expected
  */
 export const toBe = (actual, expected) => {
   if (actual !== expected) {
-    const expectedStr =
-      typeof expected == "string" ? '"<expected>"' : "<expected>";
+    const a = "<actual>";
+    const e = "<expected>";
 
-    const actualStr = typeof actual == "string" ? '"<actual>"' : "<actual>";
+    const expectedStr = isString(expected) ? padDoubleQuotes(e) : e;
+
+    const actualStr = isString(actual) ? padDoubleQuotes(a) : a;
 
     throw new ExpectationError(
       `value to be ${expectedStr}, but it was ${actualStr}`,

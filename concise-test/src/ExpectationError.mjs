@@ -9,7 +9,7 @@ import { color } from "./colors.mjs";
 
 export class ExpectationError extends Error {
   /**
-   * Genearte regex with optional single or double quotes around the provided string. E.g., "<actual>"
+   * Generate regex with optional single or double quotes around the provided string. E.g., "<actual>"
    * @param {string} str
    * @returns {RegExp}
    */
@@ -25,6 +25,7 @@ export class ExpectationError extends Error {
   constructor(message, args) {
     // prev: message.replace("<expected>", `<bold><green>${args.expected}</green></bold>`)
 
+    //$1 and $3 are the preceding and following quotes respectively
     super(
       "Expected " +
         color(
