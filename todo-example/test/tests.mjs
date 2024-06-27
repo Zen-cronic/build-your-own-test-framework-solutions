@@ -1,4 +1,4 @@
-import { it, describe } from "concise-test";
+import { it, describe, beforeEach } from "concise-test";
 import { emptyTodo, markAsDone } from "../src/todo.mjs";
 import { TodoRepository } from "../src/todoRepository.mjs";
 // const repository = new TodoRepository() // global
@@ -20,10 +20,17 @@ describe("todo", () => {
 });
 
 describe("ToDoRepository", () => {
+  const newTodo = { ...emptyTodo(), title: "test" };
+  let repository;
+
+  beforeEach(() => {
+    repository = new TodoRepository();
+  });
+
   describe("add method", () => {
     it("should throw an exception when adding a todo without a title", () => {
       mockThrow();
-      const repository = new TodoRepository();
+      // const repository = new TodoRepository();
 
       try {
         repository.add(emptyTodo());
@@ -39,9 +46,9 @@ describe("ToDoRepository", () => {
     });
 
     it("should throw errors when adding a repeated todo", () => {
-      const repository = new TodoRepository(); // global
+      // const repository = new TodoRepository(); // global
 
-      const newTodo = { ...emptyTodo(), title: "test" };
+      // const newTodo = { ...emptyTodo(), title: "test" };
       repository.add(newTodo);
 
       const repeatedTodo = { ...newTodo };
@@ -61,8 +68,8 @@ describe("ToDoRepository", () => {
 
   describe("findAllMatching method", () => {
     it("finds an added todo", () => {
-      const repository = new TodoRepository();
-      const newTodo = { ...emptyTodo(), title: "test" };
+      // const repository = new TodoRepository();
+      // const newTodo = { ...emptyTodo(), title: "test" };
       repository.add(newTodo);
 
       if (repository.findAllMatching("").length !== 1)
@@ -70,8 +77,8 @@ describe("ToDoRepository", () => {
     });
 
     it("filters out todos that do not match filter", () => {
-      const repository = new TodoRepository();
-      const newTodo = { ...emptyTodo(), title: "test" };
+      // const repository = new TodoRepository();
+      // const newTodo = { ...emptyTodo(), title: "test" };
       repository.add(newTodo);
       if (
         repository.findAllMatching("some other test")
@@ -87,6 +94,6 @@ describe("ToDoRepository", () => {
 // describe("async fn", async () => {
 
 //   it('should throw Error if cb of describe is an async', () => {
-    
+
 //   });
 // })

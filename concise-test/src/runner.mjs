@@ -34,16 +34,13 @@ const exitCodes = {
 
 let successes = 0;
 
-// let currentDescribe ;
-
-// from <string> to {name<string>, befores<Array>, afters<Array>}
+// from <string> to {name<string>, befores<Array>, [afters]<Array>}
 
 /**
  * @type {DescribeStack}
  */
 let describeStack = [];
 
-// let failures = 0;
 /**
  * @type {Array<Failure>}
  */
@@ -89,7 +86,7 @@ const printAllFailures = () => {
  */
 const composeTestDescription = (failure) => {
   //only need the name of the describe block obj, not befores or afters
-  //describeStack is the global array of non-it describe blocks; name is current (failing) it test
+  //describeStack is the global array of non-it describe blocks; name is the current (failing) it test
 
   const { name, describeStack } = failure;
   return [...describeStack, { name }]
@@ -98,8 +95,8 @@ const composeTestDescription = (failure) => {
 };
 
 /**
- * 
- * @param {string} message 
+ *
+ * @param {string} message
  * @returns {string}
  */
 const indent = (message) => {
@@ -107,18 +104,34 @@ const indent = (message) => {
 };
 
 /**
- * 
- * @param {Array} arr 
+ *
+ * @param {Array} arr
  * @returns {Array}
  */
 const withoutLast = (arr) => arr.slice(0, -1);
 
 /**
+ *
+ * @param {Array} arr
+ * @returns {any | undefined}
+ */
+const getLast = (arr) => arr[arr.length - 1];
+
+/**
+ * Invoke all beforeEach blocks
+ */
+const invokeBefores = () => {
+  describeStack
+    .flatMap((describe) => describe.befores)
+    .forEach((before) => before());
+};
+/**
  * @returns {Promise<void>}
  */
 export const run = async () => {
   try {
-    const p = path.resolve(process.cwd(), "test/tests.mjs");
+    const relativeTestName = "test/tests.mjs";
+    const p = path.resolve(process.cwd(), relativeTestName);
 
     const windowsPath = pathToFileURL(p);
     // console.log({windowsPath});
@@ -140,12 +153,13 @@ export const run = async () => {
 };
 
 /**
- * 
- * @param {string} name 
- * @param {Function} body 
+ *
+ * @param {string} name
+ * @param {Function} body
  */
 export const it = (name, body) => {
   try {
+    invokeBefores();
     body();
     console.log(
       indent(color(`<bold><green>${TICK} PASS ${name}</green></bold>`))
@@ -153,7 +167,6 @@ export const it = (name, body) => {
     successes++;
   } catch (e) {
     console.log(indent(color(`<bold><red>${CROSS} PASS ${name}</red></bold>`)));
-    // failures.push(e);
     failures.push({
       error: e,
       name: name,
@@ -167,14 +180,13 @@ export const it = (name, body) => {
 };
 
 /**
- * 
- * @param {string} name 
- * @param {Function} body 
+ *
+ * @param {string} name
+ * @param {Function} body
  */
 export const describe = (name, body) => {
   console.log(indent(name));
-  // console.log(name);
-  // currentDescribe = name
+
   describeStack = [...describeStack, makeDescribe(name)];
   const result = body(); //the it invoked
 
@@ -185,4 +197,19 @@ export const describe = (name, body) => {
   }
   // currentDescribe = undefined
   describeStack = withoutLast(describeStack);
+};
+
+/**
+ *
+ * @param {Function} body
+ */
+export const beforeEach = (body) => {
+  const currentDescribe = getLast(describeStack);
+
+  const updatedDescribe = {
+    ...currentDescribe,
+    befores: [...currentDescribe.befores, body],
+  };
+
+  describeStack = [...withoutLast(describeStack), updatedDescribe];
 };
