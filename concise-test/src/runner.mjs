@@ -259,6 +259,7 @@ const matcherHandler = (actual) => ({
  * @property {() => void} toBeDefined
  * @property {(expected?: Error) => void} toThrow
  * @property {(expected: number) => void} toHaveLength
+ * @property {(expected: any) => void} toBe
  */
 
 /**

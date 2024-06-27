@@ -33,9 +33,6 @@ describe("ToDoRepository", () => {
   beforeEach(() => {
     repository = new TodoRepository();
   });
-  //  afterEach(() => {
-  //     console.log(`ToDoRepository afterEach`);
-  //   });
 
   describe("add method", () => {
     it("should throw an exception when adding a todo without a title", () => {
@@ -65,7 +62,6 @@ describe("ToDoRepository", () => {
       expect(() => repository.add(repeatedTodo)).toThrow(
         new Error("123todo already exists")
       );
-      
     });
   });
 
@@ -73,21 +69,23 @@ describe("ToDoRepository", () => {
     beforeEach(() => {
       repository.add(newTodo);
     });
-    // afterEach(() => {
-    //   console.log(`findAllMatching method afterEach`);
-    // });
+
     it("finds an added todo", () => {
       expect(repository.findAllMatching("")).toHaveLength(
         1
       );
-
     });
 
     it("filters out todos that do not match filter", () => {
+      //1+n expect DNThrow
+      // expect(1).toBe(1)
 
-      expect(repository.findAllMatching("some other test")).toHaveLength(
-        100
-      );
+      // expect(1).toBe("1"); //ExpectationError: Expected value to be "1", but it was 1
+      expect("2").toBe(2)  //ExpectationError: Expected value to be 2, but it was "2"
+
+      expect(
+        repository.findAllMatching("some other test")
+      ).toHaveLength(100);
       // if (
       //   repository.findAllMatching("some other test")
       //     .length !== 0

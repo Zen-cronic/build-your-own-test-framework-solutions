@@ -53,8 +53,30 @@ export const toThrow = (fn, expected) => {
 export const toHaveLength = (actual, expected) => {
   if (actual.length !== expected) {
     throw new ExpectationError(
-      "value to have length <expected> but it was <actual",
+      "value to have length <expected>, but it was <actual>",
       { actual: actual.length, expected }
+    );
+  }
+};
+
+/**
+ *
+ * @param {*} actual
+ * @param {*} expected
+ */
+export const toBe = (actual, expected) => {
+  if (actual !== expected) {
+    const expectedStr =
+      typeof expected == "string" ? '"<expected>"' : "<expected>";
+
+    const actualStr = typeof actual == "string" ? '"<actual>"' : "<actual>";
+
+    throw new ExpectationError(
+      `value to be ${expectedStr}, but it was ${actualStr}`,
+      {
+        actual,
+        expected,
+      }
     );
   }
 };
