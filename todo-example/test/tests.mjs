@@ -1,21 +1,28 @@
-import { it, describe, beforeEach } from "concise-test";
+import {
+  it,
+  describe,
+  beforeEach,
+  afterEach,
+  expect,
+} from "concise-test";
 import { emptyTodo, markAsDone } from "../src/todo.mjs";
 import { TodoRepository } from "../src/todoRepository.mjs";
-// const repository = new TodoRepository() // global
 
+// describe("Test Suite", () => {
 const mockThrow = () => {
   throw new Error("Jello, Error");
 };
 
 describe("todo", () => {
   it("should set completedAt when calling markAsDone", () => {
-    mockThrow();
+    // mockThrow();
     const todo = emptyTodo();
 
-    if (!markAsDone(todo).completedAt)
-      throw new Error(
-        "completedAt not set when calling markAsDone"
-      );
+    expect(markAsDone(todo).completedAt).toBeDefined();
+    // if (!markAsDone(todo).completedAt)
+    //   throw new Error(
+    //     "completedAt not set when calling markAsDone"
+    //   );
   });
 });
 
@@ -26,71 +33,72 @@ describe("ToDoRepository", () => {
   beforeEach(() => {
     repository = new TodoRepository();
   });
+  //  afterEach(() => {
+  //     console.log(`ToDoRepository afterEach`);
+  //   });
 
   describe("add method", () => {
     it("should throw an exception when adding a todo without a title", () => {
-      mockThrow();
-      // const repository = new TodoRepository();
+      // mockThrow();
 
-      try {
-        repository.add(emptyTodo());
-        throw new Error(
-          "no error thrown when adding an empty todo"
-        );
-      } catch (e) {
-        if (e.message !== "title cannot be blank")
-          throw new Error(
-            "wrong message in guard clause when adding an empty todo"
-          );
-      }
+      expect(() => repository.add(emptyTodo())).toThrow(
+        new Error("title cannot be blank")
+      );
+      // try {
+      //   repository.add(emptyTodo());
+      //   throw new Error(
+      //     "no error thrown when adding an empty todo"
+      //   );
+      // } catch (e) {
+      //   if (e.message !== "title cannot be blank")
+      //     throw new Error(
+      //       "wrong message in guard clause when adding an empty todo"
+      //     );
+      // }
     });
 
     it("should throw errors when adding a repeated todo", () => {
-      // const repository = new TodoRepository(); // global
-
-      // const newTodo = { ...emptyTodo(), title: "test" };
       repository.add(newTodo);
 
       const repeatedTodo = { ...newTodo };
-      try {
-        repository.add(repeatedTodo);
-        throw new Error(
-          "no error thrown when adding a repeated todo"
-        );
-      } catch (e) {
-        if (e.message !== "todo already exists")
-          throw new Error(
-            "wrong message in guard clause when adding an existing todo"
-          );
-      }
+
+      expect(() => repository.add(repeatedTodo)).toThrow(
+        new Error("123todo already exists")
+      );
     });
   });
 
   describe("findAllMatching method", () => {
-    it("finds an added todo", () => {
-      // const repository = new TodoRepository();
-      // const newTodo = { ...emptyTodo(), title: "test" };
+    beforeEach(() => {
       repository.add(newTodo);
+    });
+    // afterEach(() => {
+    //   console.log(`findAllMatching method afterEach`);
+    // });
+    it("finds an added todo", () => {
+      expect(repository.findAllMatching("")).toHaveLength(
+        1
+      );
 
-      if (repository.findAllMatching("").length !== 1)
-        throw new Error("added todo was not returned");
     });
 
     it("filters out todos that do not match filter", () => {
-      // const repository = new TodoRepository();
-      // const newTodo = { ...emptyTodo(), title: "test" };
-      repository.add(newTodo);
-      if (
-        repository.findAllMatching("some other test")
-          .length !== 0
-      )
-        throw new Error(
-          "filter was not applied when finding matches"
-        );
+
+      expect(repository.findAllMatching("some other test")).toHaveLength(
+        100
+      );
+      // if (
+      //   repository.findAllMatching("some other test")
+      //     .length !== 0
+      // )
+      //   throw new Error(
+      //     "filter was not applied when finding matches"
+      //   );
     });
   });
 });
 
+// });
 // describe("async fn", async () => {
 
 //   it('should throw Error if cb of describe is an async', () => {

@@ -1,10 +1,9 @@
 import path from "path";
 import { pathToFileURL } from "url";
 import { color } from "./colors.mjs";
+import * as matchers from "./matchers.mjs";
 
 // [ERR_UNSUPPORTED_ESM_URL_SCHEME]: Only URLs with a scheme in: file, data, and node are supported by the default ESM loader. On Windows, absolute paths must be valid file:// URLs. Received protocol 'c:'
-
-// let anyFailure = false;  //module-level vari
 
 /**
  * @typedef {Array<DescribeBlock>} DescribeStack
@@ -118,13 +117,25 @@ const withoutLast = (arr) => arr.slice(0, -1);
 const getLast = (arr) => arr[arr.length - 1];
 
 /**
+ *
+ * @param {Array<Function>} fnArr
+ */
+const invokeAll = (fnArr) => fnArr.forEach((fn) => fn());
+
+/**
  * Invoke all beforeEach blocks
  */
 const invokeBefores = () => {
-  describeStack
-    .flatMap((describe) => describe.befores)
-    .forEach((before) => before());
+  invokeAll(describeStack.flatMap((describe) => describe.befores));
 };
+
+/**
+ * Invoke all afterEach blocks
+ */
+const invokeAfters = () => {
+  invokeAll(describeStack.flatMap((describe) => describe.afters));
+};
+
 /**
  * @returns {Promise<void>}
  */
@@ -134,7 +145,6 @@ export const run = async () => {
     const p = path.resolve(process.cwd(), relativeTestName);
 
     const windowsPath = pathToFileURL(p);
-    // console.log({windowsPath});
 
     await import(windowsPath);
   } catch (error) {
@@ -148,7 +158,6 @@ export const run = async () => {
     `)
   );
   console.log("\nJello");
-  //   process.exit(anyFailure ? exitCodes.failures : exitCodes.ok);
   process.exit(failures.length != 0 ? exitCodes.failures : exitCodes.ok);
 };
 
@@ -161,6 +170,7 @@ export const it = (name, body) => {
   try {
     invokeBefores();
     body();
+    invokeAfters();
     console.log(
       indent(color(`<bold><green>${TICK} PASS ${name}</green></bold>`))
     );
@@ -170,7 +180,6 @@ export const it = (name, body) => {
     failures.push({
       error: e,
       name: name,
-      // describeName: currentDescribe
       describeStack,
     });
   }
@@ -195,21 +204,66 @@ export const describe = (name, body) => {
     // process.exit(1)
     throw new Error(`Cannot be async`);
   }
-  // currentDescribe = undefined
+  // getCurrentDescribe = undefined
   describeStack = withoutLast(describeStack);
+};
+
+/**
+ *
+ * @returns {DescribeBlock}
+ */
+const getCurrentDescribe = () => getLast(describeStack);
+
+/**
+ *
+ * @param {any} newProps
+ */
+const updatedDescribe = (newProps) => {
+  //spread & updated
+  const updatedDescribe = {
+    ...getCurrentDescribe(),
+    ...newProps,
+  };
+
+  describeStack = [...withoutLast(describeStack), updatedDescribe];
+};
+/**
+ *
+ * @param {Function} body
+ */
+export const beforeEach = (body) => {
+  updatedDescribe({
+    befores: [...getCurrentDescribe().befores, body],
+  });
 };
 
 /**
  *
  * @param {Function} body
  */
-export const beforeEach = (body) => {
-  const currentDescribe = getLast(describeStack);
-
-  const updatedDescribe = {
-    ...currentDescribe,
-    befores: [...currentDescribe.befores, body],
-  };
-
-  describeStack = [...withoutLast(describeStack), updatedDescribe];
+export const afterEach = (body) => {
+  updatedDescribe({
+    afters: [...getCurrentDescribe().afters, body],
+  });
 };
+
+const matcherHandler = (actual) => ({
+  get:
+    (_, name) =>
+    (...args) =>
+      matchers[name](actual, ...args),
+});
+
+/**
+ * @typedef {Object} Matchers
+ * @property {() => void} toBeDefined
+ * @property {(expected?: Error) => void} toThrow
+ * @property {(expected: number) => void} toHaveLength
+ */
+
+/**
+ *
+ * @param {any} actual
+ * @returns {Matchers}
+ */
+export const expect = (actual) => new Proxy({}, matcherHandler(actual));
