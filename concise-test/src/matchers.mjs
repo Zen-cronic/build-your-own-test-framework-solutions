@@ -1,5 +1,5 @@
 import { EOL } from "os";
-import { color } from "./colors.mjs";
+import { ExpectationError } from "./ExpectationError.mjs";
 
 /**
  *
@@ -11,7 +11,7 @@ export const toBeDefined = (actual) => {
   // console.log(`toBeDefined invoked`);
 
   if (actual === undefined) {
-    throw new Error(`Expected undefined value to be defined`);
+    throw new ExpectationError("<actual> value to be defined", { actual });
   }
 };
 
@@ -23,32 +23,38 @@ export const toBeDefined = (actual) => {
 export const toThrow = (fn, expected) => {
   try {
     fn();
-    throw new Error(`Expected ${fn} to throw exception but it did not`);
+    throw new ExpectationError("<source> to throw exception but it did not", {
+      source: fn,
+    });
   } catch (actualError) {
     if (expected && actualError.message !== expected.message) {
-      throw new Error(
-        `Expected ${fn} to throw an exception, but the thrown error message did not match the expected message.` +
+      throw new ExpectationError(
+        "<source> to throw an exception, but the thrown error message did not match the expected message." +
           EOL +
-          ` Expected exception message: ${expected.message}` +
+          " Expected exception message: <expected>" +
           EOL +
-          `   Actual exception message: ${actualError.message}` +
-          EOL
+          "   Actual exception message: <actual>" +
+          EOL,
+        {
+          actual: actualError.message,
+          source: fn,
+          expected: expected.message,
+        }
       );
     }
   }
 };
 
 /**
- *
+ * Check for objects with `length` property (i.e., Array, strings)
  * @param {Array | string} actual
  * @param {number} expected
  */
 export const toHaveLength = (actual, expected) => {
   if (actual.length !== expected) {
-    throw new Error(
-      color(
-        `Expected value to have length <bold>${expected}</bold> but it was <bold>${actual.length}</bold>`
-      )
+    throw new ExpectationError(
+      "value to have length <expected> but it was <actual",
+      { actual: actual.length, expected }
     );
   }
 };
