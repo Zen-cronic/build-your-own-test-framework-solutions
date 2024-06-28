@@ -3,8 +3,6 @@ import { pathToFileURL } from "url";
 import { color } from "./colors.mjs";
 import * as matchers from "./matchers.mjs";
 
-// [ERR_UNSUPPORTED_ESM_URL_SCHEME]: Only URLs with a scheme in: file, data, and node are supported by the default ESM loader. On Windows, absolute paths must be valid file:// URLs. Received protocol 'c:'
-
 /**
  * @typedef {Array<DescribeBlock>} DescribeStack
  */
