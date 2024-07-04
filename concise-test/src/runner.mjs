@@ -3,6 +3,9 @@ import { pathToFileURL } from "url";
 import { color } from "./colors.mjs";
 import * as matchers from "./matchers.mjs";
 import { ExpectationError } from "./ExpectationError.mjs";
+import { formatStackTrace } from "./stackTraceFormatter.mjs";
+
+Error.prepareStackTrace = formatStackTrace
 
 /**
  * @typedef {Array<DescribeBlock>} DescribeStack
@@ -88,7 +91,8 @@ const makeDescribe = (name) => {
 const printFailure = (failure) => {
   console.error(color(composeTestDescription(failure)));
   failure.errors.forEach((error) => {
-    console.error(error);
+    console.error(error.message);
+    console.error(error.stack);
     console.error("");
   });
   console.error("");
@@ -174,7 +178,8 @@ export const run = async () => {
 
     await import(windowsPath);
   } catch (error) {
-    console.error(error);
+    console.error(error.message);
+    console.error(error.stack);
   }
 
   printAllFailures();
@@ -291,13 +296,11 @@ const matcherHandler = (actual) => ({
     (...args) => {
       try {
         matchers[name](actual, ...args);
-        
       } catch (error) {
-        if(error instanceof ExpectationError){
-          currentTest.errors.push(error)
-          
-        }else{
-          throw e
+        if (error instanceof ExpectationError) {
+          currentTest.errors.push(error);
+        } else {
+          throw e;
         }
       }
     },
