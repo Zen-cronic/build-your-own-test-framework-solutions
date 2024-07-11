@@ -83,7 +83,7 @@ describe("ToDoRepository", () => {
       // expect(1).toBe("1"); //ExpectationError: Expected value to be "1", but it was 1
       // expect("2").toBe(2)  //ExpectationError: Expected value to be 2, but it was "2"
 
-      // expect(1).toBe(100) //to be 100, but it was 1
+      expect(1).toBe(10000) //to be 100, but it was 1
       expect(
         repository.findAllMatching("some other test")
       ).toHaveLength(100);

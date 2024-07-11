@@ -2,6 +2,10 @@ import path from "path";
 import { pathToFileURL } from "url";
 import { color } from "./colors.mjs";
 import * as matchers from "./matchers.mjs";
+import { ExpectationError } from "./ExpectationError.mjs";
+import { formatStackTrace } from "./stackTraceFormatter.mjs";
+
+// Error.prepareStackTrace = formatStackTrace
 
 /**
  * @typedef {Array<DescribeBlock>} DescribeStack
@@ -15,11 +19,18 @@ import * as matchers from "./matchers.mjs";
  */
 
 /**
- * @typedef Failure
- * @property {Error} error
+ * @typedef TestBlock - Each it block
  * @property {string} name
+ * @property {Array<Error>} errors
  * @property {DescribeStack} describeStack
  */
+
+// /** B4 currentTest
+//  * @typedef Failure
+//  * @property {Error} error
+//  * @property {string} name
+//  * @property {DescribeStack} describeStack
+//  */
 
 const TICK = "\u2713";
 const CROSS = "\u2717";
@@ -31,6 +42,11 @@ const exitCodes = {
 
 let successes = 0;
 
+/**
+ * @type {TestBlock | null}
+ */
+let currentTest;
+
 // from <string> to {name<string>, befores<Array>, [afters]<Array>}
 
 /**
@@ -39,10 +55,22 @@ let successes = 0;
 let describeStack = [];
 
 /**
- * @type {Array<Failure>}
+ * @type {Array<TestBlock>}
  */
 const failures = [];
 
+/**
+ * Create test/it
+ * @param {string} name
+ * @returns {TestBlock}
+ */
+const makeTest = (name) => {
+  return {
+    name,
+    errors: [],
+    describeStack: describeStack,
+  };
+};
 /**
  *
  * @param {string} name
@@ -58,11 +86,15 @@ const makeDescribe = (name) => {
 
 /**
  *
- * @param {Failure} failure
+ * @param {TestBlock} failure
  */
 const printFailure = (failure) => {
   console.error(color(composeTestDescription(failure)));
-  console.error(failure.error);
+  failure.errors.forEach((error) => {
+    console.error(error.message);
+    console.error(error.stack);
+    console.error("");
+  });
   console.error("");
 };
 
@@ -78,7 +110,7 @@ const printAllFailures = () => {
 
 /**
  *
- * @param {Failure} failure
+ * @param {TestBlock} failure
  * @returns {string}
  */
 const composeTestDescription = (failure) => {
@@ -138,6 +170,8 @@ const invokeAfters = () => {
  * @returns {Promise<void>}
  */
 export const run = async () => {
+  const origPrepareStackTrace = Error.prepareStackTrace;
+  Error.prepareStackTrace = formatStackTrace;
   try {
     const relativeTestName = "test/tests.mjs";
     const p = path.resolve(process.cwd(), relativeTestName);
@@ -146,17 +180,21 @@ export const run = async () => {
 
     await import(windowsPath);
   } catch (error) {
-    console.error(error);
-  }
+    console.error(error.message);
+    console.error(error.stack);
+  } finally {
+    printAllFailures();
+    Error.prepareStackTrace = origPrepareStackTrace;
 
-  printAllFailures();
-  console.log();
-  console.log(
-    color(`<green>${successes}</green> tests have passed, <red>${failures.length}</red> tests have failed
+    //LTR: move to finally?
+    console.log();
+    console.log(
+      color(`<green>${successes}</green> tests have passed, <red>${failures.length}</red> tests have failed
     `)
-  );
-  console.log("\nJello");
-  process.exit(failures.length != 0 ? exitCodes.failures : exitCodes.ok);
+    );
+
+    process.exit(failures.length != 0 ? exitCodes.failures : exitCodes.ok);
+  }
 };
 
 /**
@@ -165,21 +203,33 @@ export const run = async () => {
  * @param {Function} body
  */
 export const it = (name, body) => {
+  currentTest = makeTest(name);
   try {
     invokeBefores();
     body();
     invokeAfters();
+    // console.log(
+    //   indent(color(`<bold><green>${TICK} PASS ${name}</green></bold>`))
+    // );
+    // successes++;
+  } catch (e) {
+    // console.log(indent(color(`<bold><red>${CROSS} PASS ${name}</red></bold>`)));
+    // failures.push({
+    //   error: e,
+    //   name: name,
+    //   describeStack,
+    // });
+    currentTest.errors.push(e);
+  }
+
+  if (currentTest.errors.length > 0) {
+    console.log(indent(color(`<bold><red>${CROSS} PASS ${name}</red></bold>`)));
+    failures.push(currentTest);
+  } else {
+    successes++;
     console.log(
       indent(color(`<bold><green>${TICK} PASS ${name}</green></bold>`))
     );
-    successes++;
-  } catch (e) {
-    console.log(indent(color(`<bold><red>${CROSS} PASS ${name}</red></bold>`)));
-    failures.push({
-      error: e,
-      name: name,
-      describeStack,
-    });
   }
 
   //prog exits on first failure - include in run, not it
@@ -248,8 +298,17 @@ export const afterEach = (body) => {
 const matcherHandler = (actual) => ({
   get:
     (_, name) =>
-    (...args) =>
-      matchers[name](actual, ...args),
+    (...args) => {
+      try {
+        matchers[name](actual, ...args);
+      } catch (error) {
+        if (error instanceof ExpectationError) {
+          currentTest.errors.push(error);
+        } else {
+          throw e;
+        }
+      }
+    },
 });
 
 /**

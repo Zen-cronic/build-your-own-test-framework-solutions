@@ -5,6 +5,7 @@ const ansiColors = {
   green: "\u001b[32m",
   red: "\u001b[31m",
   yellow: "\u001b[33m",
+  dim: "\u001b[37;2m",
 };
 const ansiReset = "\u001b[0m";
 
@@ -22,6 +23,6 @@ export const color = (message) => {
 
     return replacedMsg;
   }, message);
-//   console.log({colorisedMsg});
+
   return colorisedMsg;
 };
