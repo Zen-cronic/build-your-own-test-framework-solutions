@@ -5,26 +5,8 @@ import {
   afterEach,
   expect,
 } from "concise-test";
-import { emptyTodo, markAsDone } from "../src/todo.mjs";
+import { emptyTodo } from "../src/todo.mjs";
 import { TodoRepository } from "../src/todoRepository.mjs";
-
-// describe("Test Suite", () => {
-const mockThrow = () => {
-  throw new Error("Jello, Error");
-};
-
-describe("todo", () => {
-  it("should set completedAt when calling markAsDone", () => {
-    // mockThrow();
-    const todo = emptyTodo();
-
-    expect(markAsDone(todo).completedAt).toBeDefined();
-    // if (!markAsDone(todo).completedAt)
-    //   throw new Error(
-    //     "completedAt not set when calling markAsDone"
-    //   );
-  });
-});
 
 describe("ToDoRepository", () => {
   const newTodo = { ...emptyTodo(), title: "test" };
@@ -83,7 +65,7 @@ describe("ToDoRepository", () => {
       // expect(1).toBe("1"); //ExpectationError: Expected value to be "1", but it was 1
       // expect("2").toBe(2)  //ExpectationError: Expected value to be 2, but it was "2"
 
-      expect(1).toBe(10000) //to be 100, but it was 1
+      expect(1).toBe(10000); //to be 100, but it was 1
       expect(
         repository.findAllMatching("some other test")
       ).toHaveLength(100);
@@ -98,11 +80,3 @@ describe("ToDoRepository", () => {
     });
   });
 });
-
-// });
-// describe("async fn", async () => {
-
-//   it('should throw Error if cb of describe is an async', () => {
-
-//   });
-// })

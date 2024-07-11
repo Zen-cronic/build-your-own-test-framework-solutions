@@ -1,4 +1,4 @@
-import { it, describe, beforeEach } from "concise-test";
+import { it, describe, beforeEach, expect } from "concise-test";
 
 describe("add function", () => {
   let count = 0;
@@ -17,7 +17,7 @@ describe("add function", () => {
     //   console.log("After all nested count:", nestedCount);
     // });
     it("should add 1 and 1", () => {
- 
+        expect(1 + 1).toBe(2)
     });
     it("should add 2 and 2", () => {
    

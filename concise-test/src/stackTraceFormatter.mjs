@@ -161,9 +161,9 @@ const indentLine = (line) => {
  *
  * @param {Error} error
  * @param {Array<CallSite>} stack
- * @returns {string[] | CallSite[]}
+ * @returns {string | CallSite[]}
  */
-export const formatStackTrace = (_, stack) => {
+export const formatStackTrace = (error, stack) => {
   //   const origStack = stack;
   //   origStack.forEach((line, idx) => {
   //     const lineNumber = idx + 1;
@@ -173,8 +173,10 @@ export const formatStackTrace = (_, stack) => {
 
   const failureLocation = getFailureLocation(stack);
 
+  //non-test errors DNUse CallSite[], but instead the orig prepareStackTrace
   if (failureLocation === undefined) {
     console.log("Nu qualifiedFailureLocation found");
+    //LTR: return undefined
     return stack;
   }
 

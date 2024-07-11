@@ -1,4 +1,5 @@
 import path from "path";
+import fs from "fs";
 import { pathToFileURL } from "url";
 import { color } from "./colors.mjs";
 import * as matchers from "./matchers.mjs";
@@ -91,6 +92,7 @@ const makeDescribe = (name) => {
 const printFailure = (failure) => {
   console.error(color(composeTestDescription(failure)));
   failure.errors.forEach((error) => {
+    // "in" from `formatStackTrace` coloured red cuz console.error
     console.error(error.message);
     console.error(error.stack);
     console.error("");
@@ -167,26 +169,58 @@ const invokeAfters = () => {
 };
 
 /**
+ *
+ * @returns {Promise<string[]>}
+ */
+const discoverTestFiles = async () => {
+  const testDir = path.resolve(process.cwd(), "test");
+  //'C:\\..\\repo\\todo-example\\test'
+
+  const dir = await fs.promises.opendir(testDir);
+  const dirPath = dir.path;
+  let testFilePaths = [];
+  for await (const dirent of dir) {
+    const fullPath = path.resolve(dirPath, dirent.name);
+    testFilePaths.push(fullPath);
+  }
+  // console.log({ testFilePaths });
+  return testFilePaths;
+};
+/**
  * @returns {Promise<void>}
  */
 export const run = async () => {
   const origPrepareStackTrace = Error.prepareStackTrace;
   Error.prepareStackTrace = formatStackTrace;
   try {
-    const relativeTestName = "test/tests.mjs";
-    const p = path.resolve(process.cwd(), relativeTestName);
+    // const relativeTestName = "test/tests.mjs";
+    // const p = path.resolve(process.cwd(), relativeTestName);
+    // const crossPlatformPath = pathToFileURL(p);
+    // await import(crossPlatformPath);
 
-    const windowsPath = pathToFileURL(p);
-
-    await import(windowsPath);
+    const testFiles = await discoverTestFiles();
+    await Promise.all(
+      testFiles.map(async (file) => {
+        const crossPlatformPath = pathToFileURL(file);
+        await import(crossPlatformPath);
+      })
+    );
   } catch (error) {
-    console.error(error.message);
-    console.error(error.stack);
+    //use built-in prepareStackTrace for non-test errors
+    if (error.name !== ExpectationError.name) {
+      Error.prepareStackTrace = origPrepareStackTrace;
+      console.error(error);
+
+      //ensure exit + DNPrint test failures
+      process.exit(exitCodes.failures);
+    }
+    //test exceptions handled by `printFailures()` - voided here
   } finally {
     printAllFailures();
+
+    //restore
     Error.prepareStackTrace = origPrepareStackTrace;
 
-    //LTR: move to finally?
     console.log();
     console.log(
       color(`<green>${successes}</green> tests have passed, <red>${failures.length}</red> tests have failed
@@ -208,17 +242,7 @@ export const it = (name, body) => {
     invokeBefores();
     body();
     invokeAfters();
-    // console.log(
-    //   indent(color(`<bold><green>${TICK} PASS ${name}</green></bold>`))
-    // );
-    // successes++;
   } catch (e) {
-    // console.log(indent(color(`<bold><red>${CROSS} PASS ${name}</red></bold>`)));
-    // failures.push({
-    //   error: e,
-    //   name: name,
-    //   describeStack,
-    // });
     currentTest.errors.push(e);
   }
 
@@ -231,9 +255,6 @@ export const it = (name, body) => {
       indent(color(`<bold><green>${TICK} PASS ${name}</green></bold>`))
     );
   }
-
-  //prog exits on first failure - include in run, not it
-  // process.exit(anyFailure ? exitCodes.failures: exitCodes.ok)
 };
 
 /**
