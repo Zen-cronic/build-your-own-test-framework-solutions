@@ -5,7 +5,7 @@ import * as matchers from "./matchers.mjs";
 import { ExpectationError } from "./ExpectationError.mjs";
 import { formatStackTrace } from "./stackTraceFormatter.mjs";
 
-Error.prepareStackTrace = formatStackTrace
+// Error.prepareStackTrace = formatStackTrace
 
 /**
  * @typedef {Array<DescribeBlock>} DescribeStack
@@ -110,7 +110,7 @@ const printAllFailures = () => {
 
 /**
  *
- * @param {Failure} failure
+ * @param {TestBlock} failure
  * @returns {string}
  */
 const composeTestDescription = (failure) => {
@@ -170,6 +170,8 @@ const invokeAfters = () => {
  * @returns {Promise<void>}
  */
 export const run = async () => {
+  const origPrepareStackTrace = Error.prepareStackTrace;
+  Error.prepareStackTrace = formatStackTrace;
   try {
     const relativeTestName = "test/tests.mjs";
     const p = path.resolve(process.cwd(), relativeTestName);
@@ -180,16 +182,19 @@ export const run = async () => {
   } catch (error) {
     console.error(error.message);
     console.error(error.stack);
-  }
+  } finally {
+    printAllFailures();
+    Error.prepareStackTrace = origPrepareStackTrace;
 
-  printAllFailures();
-  console.log();
-  console.log(
-    color(`<green>${successes}</green> tests have passed, <red>${failures.length}</red> tests have failed
+    //LTR: move to finally?
+    console.log();
+    console.log(
+      color(`<green>${successes}</green> tests have passed, <red>${failures.length}</red> tests have failed
     `)
-  );
-  console.log("\nJello");
-  process.exit(failures.length != 0 ? exitCodes.failures : exitCodes.ok);
+    );
+
+    process.exit(failures.length != 0 ? exitCodes.failures : exitCodes.ok);
+  }
 };
 
 /**

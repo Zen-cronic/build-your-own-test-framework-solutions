@@ -10,7 +10,7 @@ const logger = new Logger("StackTrace").disableAll();
 const ignoredFilePatterns = [
   /\/node_modules\//,
   new RegExp(path.dirname(new URL(import.meta.url).pathname)),
-  /^node:internal\//, 
+  /^node:internal\//,
 ];
 
 /**
@@ -41,7 +41,9 @@ const findFailureCallSite = (stack) => {
 const relative = (fileUrl) => {
   //wo this throw: "TypeError: fileUrl.replace is not a function"
   if (typeof fileUrl != "string") {
-    throw new TypeError("Param must be string");
+    throw new TypeError(
+      `Paramter must be of type string. Received: '${typeof fileUrl}'.`
+    );
   }
 
   const pathWithoutFileProtocol = fileURLToPath(fileUrl, { windows: false });
@@ -162,12 +164,12 @@ const indentLine = (line) => {
  * @returns {string[] | CallSite[]}
  */
 export const formatStackTrace = (_, stack) => {
-//   const origStack = stack;
-//   origStack.forEach((line, idx) => {
-//     const lineNumber = idx + 1;
-//     console.log(lineNumber, line.getFileName());
-//   });
-//   console.log("");
+  //   const origStack = stack;
+  //   origStack.forEach((line, idx) => {
+  //     const lineNumber = idx + 1;
+  //     console.log(lineNumber, line.getFileName());
+  //   });
+  //   console.log("");
 
   const failureLocation = getFailureLocation(stack);
 
@@ -176,9 +178,9 @@ export const formatStackTrace = (_, stack) => {
     return stack;
   }
 
-  const { fileName} = failureLocation;
+  const { fileName, lineNumber, columnNumber } = failureLocation;
 
-  const introLine = `in <bold>${fileName}</bold>:`;
+  const introLine = `in <bold>${fileName}</bold><dim>:${lineNumber}:${columnNumber}</dim>`;
 
   const allLines = ["", introLine, "", ...highlightedSource(failureLocation)];
   return color(allLines.map(indentLine).join(EOL));
