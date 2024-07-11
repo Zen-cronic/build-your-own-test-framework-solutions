@@ -39,6 +39,7 @@ const CROSS = "\u2717";
 const exitCodes = {
   ok: 0,
   failures: 1,
+  cannotAccessFile: 2,
 };
 
 let successes = 0;
@@ -168,6 +169,44 @@ const invokeAfters = () => {
   invokeAll(describeStack.flatMap((describe) => describe.afters));
 };
 
+const isSingleFileMode = () => process.argv[2];
+
+/**
+ *
+ * @returns {Promise<string[]>}
+ */
+const getSingleFilePath = async () => {
+  const filePathArg = process.argv[2];
+
+  try {
+    const fullPath = path.resolve(process.cwd(), filePathArg);
+
+    await fs.promises.access(fullPath);
+    return [fullPath];
+  } catch (error) {
+    if (error.code === "ENOENT") {
+      console.error(`File ${filePathArg} could not be accessed.`);
+      // throw vs log error: diff format
+      // throw - bubble up to parent + orig prepareStackTrace format
+      // console.error - voided here + custom implm of prepareStackTrace in formatStackTrace
+      console.error(error);
+      // throw error
+    } else {
+      //throw
+      console.error(error);
+    }
+
+    process.exit(exitCodes.cannotAccessFile);
+  }
+};
+
+/**
+ *
+ * @returns {Promise<string[]>}
+ */
+const chooseTestFiles = () => {
+  return isSingleFileMode() ? getSingleFilePath() : discoverTestFiles();
+};
 /**
  *
  * @returns {Promise<string[]>}
@@ -183,7 +222,9 @@ const discoverTestFiles = async () => {
     const fullPath = path.resolve(dirPath, dirent.name);
     testFilePaths.push(fullPath);
   }
-  // console.log({ testFilePaths });
+
+  //asyncIterator auto close
+  // await dir.close()
   return testFilePaths;
 };
 /**
@@ -193,15 +234,11 @@ export const run = async () => {
   const origPrepareStackTrace = Error.prepareStackTrace;
   Error.prepareStackTrace = formatStackTrace;
   try {
-    // const relativeTestName = "test/tests.mjs";
-    // const p = path.resolve(process.cwd(), relativeTestName);
-    // const crossPlatformPath = pathToFileURL(p);
-    // await import(crossPlatformPath);
-
-    const testFiles = await discoverTestFiles();
+    // const testFilePaths = await discoverTestFiles();
+    const testFilePaths = await chooseTestFiles();
     await Promise.all(
-      testFiles.map(async (file) => {
-        const crossPlatformPath = pathToFileURL(file);
+      testFilePaths.map(async (testFilePath) => {
+        const crossPlatformPath = pathToFileURL(testFilePath);
         await import(crossPlatformPath);
       })
     );
